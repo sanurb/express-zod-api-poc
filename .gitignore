@@ -14,6 +14,13 @@ lerna-debug.log*
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
 # Runtime data
 pids
 *.pid
@@ -30,3 +37,8 @@ lens.db-trace
 lens.db-trace-journal
 lens.db-trace-wal
 lens.db-trace-journal
+
+# Auto-generated Documentation
+/docs/api-client.ts
+/docs/openapi.json
+/docs/openapi.yaml

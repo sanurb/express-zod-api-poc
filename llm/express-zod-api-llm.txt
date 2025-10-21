@@ -1,0 +1,525 @@
+# Express Zod API
+
+Express Zod API is a TypeScript-first framework for building type-safe REST APIs with automatic input/output validation using Zod schemas. It provides a declarative approach to defining endpoints, middleware, and routing while ensuring complete type safety throughout the request-response lifecycle. The framework eliminates repetitive boilerplate by integrating Express.js server capabilities with Zod's schema validation, automatic documentation generation, and type-safe client generation.
+
+The framework bridges the gap between backend API development and frontend client integration by generating OpenAPI 3.1 documentation and TypeScript client code directly from your endpoint definitions. Every request input and response output is validated against Zod schemas, providing runtime type safety and preventing common API errors like null values, undefined fields, or type mismatches. Middleware can provide typed options to endpoints, handlers receive fully typed input parameters, and custom result handlers enable flexible response formatting.
+
+## Creating and Starting a Server
+
+Basic server setup with configuration and routing.
+
+```typescript
+import { createConfig, createServer, defaultEndpointsFactory, Routing } from "express-zod-api";
+import { z } from "zod";
+
+// Configure server
+const config = createConfig({
+  http: { listen: 8090 },
+  cors: true,
+  compression: true,
+  logger: {
+    level: "debug",
+    color: true,
+  },
+});
+
+// Create an endpoint
+const helloEndpoint = defaultEndpointsFactory.build({
+  method: "get",
+  input: z.object({
+    name: z.string().optional(),
+  }),
+  output: z.object({
+    greeting: z.string(),
+  }),
+  handler: async ({ input, logger }) => {
+    logger.info(`Request from ${input.name || "anonymous"}`);
+    return { greeting: `Hello, ${input.name || "World"}!` };
+  },
+});
+
+// Define routing
+const routing: Routing = {
+  v1: {
+    hello: helloEndpoint,
+  },
+};
+
+// Start server
+await createServer(config, routing);
+
+// Test with: curl "http://localhost:8090/v1/hello?name=Alice"
+// Response: {"status":"success","data":{"greeting":"Hello, Alice!"}}
+```
+
+## Building Endpoints with Input/Output Validation
+
+Define type-safe endpoints with automatic validation and transformation.
+
+```typescript
+import { defaultEndpointsFactory, ez } from "express-zod-api";
+import { z } from "zod";
+import createHttpError from "http-errors";
+
+const getUserEndpoint = defaultEndpointsFactory.build({
+  method: "get",
+  tag: "users",
+  shortDescription: "Retrieves a user by ID",
+  input: z.object({
+    id: z.string()
+      .regex(/^\d+$/)
+      .transform(id => parseInt(id, 10))
+      .describe("numeric user ID"),
+  }),
+  output: z.object({
+    id: z.number().nonnegative(),
+    name: z.string(),
+    email: z.string().email(),
+    createdAt: ez.dateOut(),
+  }),
+  handler: async ({ input, logger }) => {
+    logger.debug(`Fetching user ${input.id}`);
+    if (input.id > 1000) {
+      throw createHttpError(404, "User not found");
+    }
+    return {
+      id: input.id,
+      name: "John Doe",
+      email: "john@example.com",
+      createdAt: new Date("2024-01-15T10:30:00Z"),
+    };
+  },
+});
+
+// Test: curl "http://localhost:8090/v1/user?id=42"
+// Response: {"status":"success","data":{"id":42,"name":"John Doe","email":"john@example.com","createdAt":"2024-01-15T10:30:00.000Z"}}
+```
+
+## Creating and Using Middleware
+
+Middleware for authentication and providing options to endpoints.
+
+```typescript
+import { Middleware, EndpointsFactory, defaultEndpointsFactory } from "express-zod-api";
+import { z } from "zod";
+import createHttpError from "http-errors";
+
+// Authentication middleware
+const authMiddleware = new Middleware({
+  security: {
+    and: [
+      { type: "input", name: "apiKey" },
+      { type: "header", name: "authorization" },
+    ],
+  },
+  input: z.object({
+    apiKey: z.string().min(1),
+  }),
+  handler: async ({ input, request, logger }) => {
+    const token = request.headers.authorization;
+    logger.debug(`Authenticating with key: ${input.apiKey}`);
+
+    if (input.apiKey !== "valid-key" || token !== "Bearer valid-token") {
+      throw createHttpError(401, "Invalid credentials");
+    }
+
+    return {
+      userId: 123,
+      username: "authenticated_user",
+    };
+  },
+});
+
+// Create authenticated factory
+const authenticatedFactory = defaultEndpointsFactory.addMiddleware(authMiddleware);
+
+// Protected endpoint
+const protectedEndpoint = authenticatedFactory.build({
+  method: "post",
+  input: z.object({
+    message: z.string(),
+  }),
+  output: z.object({
+    success: z.boolean(),
+    user: z.string(),
+  }),
+  handler: async ({ input, options }) => {
+    // options.userId and options.username available from middleware
+    return {
+      success: true,
+      user: options.username,
+    };
+  },
+});
+
+// Test: curl -X POST "http://localhost:8090/v1/protected?apiKey=valid-key" \
+//   -H "Authorization: Bearer valid-token" \
+//   -H "Content-Type: application/json" \
+//   -d '{"message":"hello"}'
+```
+
+## Defining Routes with Multiple Patterns
+
+Flexible routing with nested paths, path parameters, and method-based routing.
+
+```typescript
+import { Routing, DependsOnMethod, ServeStatic } from "express-zod-api";
+
+const routing: Routing = {
+  // Flat syntax: /v1/users
+  "/v1/users": listUsersEndpoint,
+
+  // Nested syntax
+  v1: {
+    user: {
+      // Path parameter: /v1/user/:id
+      ":id": getUserEndpoint,
+
+      // Nested with parameter: /v1/user/:id/profile
+      ":id/profile": getUserProfileEndpoint,
+    },
+
+    // Method-based routing: /v1/account
+    account: new DependsOnMethod({
+      get: getAccountEndpoint,
+      post: createAccountEndpoint,
+      delete: deleteAccountEndpoint,
+    }),
+
+    // Mixed syntax with explicit method: /v1/user/:id
+    "patch /user/:id": updateUserEndpoint,
+
+    // Endpoint with nested routes
+    orders: listOrdersEndpoint.nest({
+      ":orderId": getOrderEndpoint,
+    }),
+  },
+
+  // Static file serving: /public serves ./assets directory
+  public: new ServeStatic("assets", {
+    dotfiles: "deny",
+    index: false,
+  }),
+};
+
+// Test various routes:
+// curl "http://localhost:8090/v1/users"
+// curl "http://localhost:8090/v1/user/42"
+// curl -X POST "http://localhost:8090/v1/account"
+// curl -X PATCH "http://localhost:8090/v1/user/42" -d '{"name":"Updated"}'
+```
+
+## Custom Result Handlers for Response Formatting
+
+Create custom response structures and status code handling.
+
+```typescript
+import { ResultHandler, EndpointsFactory, ensureHttpError } from "express-zod-api";
+import { z } from "zod";
+
+// Custom result handler with different status codes
+const customResultHandler = new ResultHandler({
+  positive: (data) => ({
+    statusCode: [200, 201],
+    schema: z.object({
+      success: z.boolean(),
+      payload: data,
+      timestamp: z.number(),
+    }),
+  }),
+  negative: [
+    {
+      statusCode: 404,
+      schema: z.object({
+        error: z.string(),
+        code: z.literal("NOT_FOUND"),
+      }),
+    },
+    {
+      statusCode: [400, 500],
+      schema: z.object({
+        error: z.string(),
+        code: z.literal("ERROR"),
+      }),
+    },
+  ],
+  handler: ({ error, response, output }) => {
+    if (error) {
+      const httpError = ensureHttpError(error);
+      return void response.status(httpError.statusCode).json({
+        error: httpError.message,
+        code: httpError.statusCode === 404 ? "NOT_FOUND" : "ERROR",
+      });
+    }
+    response.status(200).json({
+      success: true,
+      payload: output,
+      timestamp: Date.now(),
+    });
+  },
+});
+
+// Factory with custom handler
+const customFactory = new EndpointsFactory(customResultHandler);
+
+const endpoint = customFactory.build({
+  method: "post",
+  input: z.object({ id: z.number() }),
+  output: z.object({ result: z.string() }),
+  handler: async ({ input }) => ({ result: `Processed ${input.id}` }),
+});
+
+// Response: {"success":true,"payload":{"result":"Processed 123"},"timestamp":1704711234567}
+```
+
+## File Upload Handling
+
+Handle file uploads with size limits and validation.
+
+```typescript
+import { createConfig, defaultEndpointsFactory, ez } from "express-zod-api";
+import { z } from "zod";
+import createHttpError from "http-errors";
+import { createHash } from "node:crypto";
+
+// Configure upload limits
+const config = createConfig({
+  http: { listen: 8090 },
+  upload: {
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limitError: createHttpError(413, "File too large"),
+  },
+});
+
+// File upload endpoint
+const uploadEndpoint = defaultEndpointsFactory.build({
+  method: "post",
+  tag: "files",
+  input: z.object({
+    file: ez.upload(),
+    description: z.string().optional(),
+  }),
+  output: z.object({
+    filename: z.string(),
+    size: z.number(),
+    mimetype: z.string(),
+    hash: z.string(),
+  }),
+  handler: async ({ input }) => {
+    const { file, description } = input;
+    const hash = createHash("sha256").update(file.data).digest("hex");
+
+    // Move file to destination
+    await file.mv(`./uploads/${file.name}`);
+
+    return {
+      filename: file.name,
+      size: file.size,
+      mimetype: file.mimetype,
+      hash,
+    };
+  },
+});
+
+// Test:
+// curl -X POST "http://localhost:8090/v1/upload" \
+//   -F "file=@image.png" \
+//   -F "description=Profile picture"
+```
+
+## Server-Sent Events (SSE) for Real-Time Updates
+
+Stream real-time events to clients using SSE.
+
+```typescript
+import { EventStreamFactory } from "express-zod-api";
+import { z } from "zod";
+import { setTimeout } from "node:timers/promises";
+
+// Define event schema
+const eventsFactory = new EventStreamFactory({
+  time: z.number().positive(),
+  status: z.string(),
+});
+
+// Create SSE endpoint
+const streamEndpoint = eventsFactory.buildVoid({
+  tag: "streams",
+  input: z.object({
+    interval: z.string().transform(v => parseInt(v, 10)).optional().default("1000"),
+  }),
+  handler: async ({ input, options: { emit, isClosed }, logger }) => {
+    let counter = 0;
+
+    while (!isClosed()) {
+      const now = Date.now();
+      logger.debug(`Emitting event ${counter}`);
+
+      emit("time", now);
+      emit("status", `Event ${counter} at ${new Date(now).toISOString()}`);
+
+      counter++;
+      await setTimeout(input.interval);
+
+      if (counter >= 10) break; // Stop after 10 events
+    }
+
+    logger.info("Stream closed");
+  },
+});
+
+// Client-side (browser):
+// const events = new EventSource("http://localhost:8090/v1/stream?interval=1000");
+// events.addEventListener("time", (e) => console.log("Time:", e.data));
+// events.addEventListener("status", (e) => console.log("Status:", e.data));
+```
+
+## Generating OpenAPI Documentation
+
+Create OpenAPI 3.1 specification from routing configuration.
+
+```typescript
+import { Documentation } from "express-zod-api";
+import { writeFile } from "node:fs/promises";
+
+const documentation = new Documentation({
+  routing,
+  config,
+  version: "1.0.0",
+  title: "My API",
+  serverUrl: "https://api.example.com",
+  composition: "components", // or "inline"
+  tags: {
+    users: "User management endpoints",
+    files: {
+      description: "File operations",
+      url: "https://docs.example.com/files"
+    },
+  },
+});
+
+// Generate YAML
+const yaml = documentation.getSpecAsYaml();
+await writeFile("openapi.yaml", yaml, "utf-8");
+
+// Generate JSON
+const json = documentation.getSpecAsJson();
+await writeFile("openapi.json", JSON.stringify(json, null, 2), "utf-8");
+
+// The generated spec includes:
+// - All endpoint paths and methods
+// - Input/output schemas
+// - Authentication requirements
+// - Response status codes
+// - Parameter descriptions and examples
+```
+
+## Generating TypeScript Client
+
+Create type-safe client code for frontend consumption.
+
+```typescript
+import { Integration } from "express-zod-api";
+import { writeFile } from "node:fs/promises";
+
+// Generate client
+const client = new Integration({
+  routing,
+  variant: "client", // or "types" for types only
+  serverUrl: "https://api.example.com",
+});
+
+const clientCode = await client.printFormatted(); // Uses prettier
+await writeFile("api-client.ts", clientCode, "utf-8");
+
+// Frontend usage of generated client:
+/*
+import { Client } from "./api-client";
+
+const api = new Client();
+
+// Type-safe API calls
+const response = await api.provide("get /v1/user/:id", { id: "42" });
+console.log(response.name); // Fully typed
+
+// POST request
+const created = await api.provide("post /v1/users", {
+  name: "Alice",
+  email: "alice@example.com"
+});
+
+// Custom implementation
+const customApi = new Client(async (method, path, params) => {
+  const response = await fetch(`${baseUrl}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return response.json();
+});
+*/
+```
+
+## Testing Endpoints and Middleware
+
+Built-in testing utilities for unit and integration tests.
+
+```typescript
+import { testEndpoint, testMiddleware, Middleware } from "express-zod-api";
+import { z } from "zod";
+
+// Test endpoint
+test("should retrieve user successfully", async () => {
+  const { responseMock, loggerMock } = await testEndpoint({
+    endpoint: getUserEndpoint,
+    requestProps: {
+      method: "GET",
+      query: { id: "42" },
+    },
+  });
+
+  expect(loggerMock._getLogs().error).toHaveLength(0);
+  expect(responseMock._getStatusCode()).toBe(200);
+  expect(responseMock._getJSONData()).toEqual({
+    status: "success",
+    data: { id: 42, name: "John Doe" },
+  });
+});
+
+// Test middleware
+test("should authenticate with valid credentials", async () => {
+  const middleware = new Middleware({
+    input: z.object({ token: z.string() }),
+    handler: async ({ input }) => {
+      if (input.token !== "valid") throw new Error("Invalid token");
+      return { userId: 123 };
+    },
+  });
+
+  const { output, loggerMock } = await testMiddleware({
+    middleware,
+    requestProps: {
+      method: "POST",
+      body: { token: "valid" },
+    },
+  });
+
+  expect(output).toEqual({ userId: 123 });
+  expect(loggerMock._getLogs().error).toHaveLength(0);
+});
+
+// Test with options from previous middleware
+test("should use accumulated options", async () => {
+  const { output } = await testMiddleware({
+    middleware: secondMiddleware,
+    requestProps: { method: "GET" },
+    options: { userId: 42 }, // From previous middleware
+  });
+
+  expect(output).toHaveProperty("enrichedData");
+});
+```
+
+Express Zod API is primarily used for building production-ready REST APIs with comprehensive type safety from backend to frontend. The main use cases include creating CRUD APIs with automatic validation, microservices with OpenAPI documentation, authenticated APIs with middleware chains, file upload/download services, and real-time data streams using SSE. The framework excels at rapid prototyping while maintaining production-grade quality through compile-time and runtime type checking.
+
+Integration patterns include connecting to existing Express applications via `attachRouting()`, using native Express middleware through `beforeRouting` configuration or `addExpressMiddleware()` factory method, generating documentation for API gateways and developer portals, and producing type-safe clients for React, Vue, Angular, or any TypeScript frontend. The framework supports progressive enhancement from simple GET/POST endpoints to complex scenarios with custom result handlers, branded schema types, graceful shutdown, and comprehensive error handling across all application layers.

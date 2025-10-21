@@ -1,0 +1,8 @@
+### Delete a cat by ID (replace with actual UUID from POST response)
+DELETE http://localhost:3000/api/v1/cats/{{$random.uuid}}
+
+### Delete another cat
+DELETE http://localhost:3000/api/v1/cats/{{$random.uuid}}
+
+### Try to delete a non-existent cat (should return 404)
+DELETE http://localhost:3000/api/v1/cats/00000000-0000-0000-0000-000000000000

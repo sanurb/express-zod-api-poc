@@ -1,0 +1,23 @@
+### Get all cats
+GET http://localhost:3000/api/v1/cats
+
+### Get all cats with pagination
+GET http://localhost:3000/api/v1/cats?page=1&limit=10
+
+### Get cats filtered by breed
+GET http://localhost:3000/api/v1/cats?breed=Persian
+
+### Get cats filtered by adoption status
+GET http://localhost:3000/api/v1/cats?isAdopted=true
+
+### Get cats with combined filters
+GET http://localhost:3000/api/v1/cats?breed=Siamese&isAdopted=false&page=1&limit=5
+
+### Get a specific cat by ID (replace with actual UUID from POST response)
+GET http://localhost:3000/api/v1/cats/{{$random.uuid}}
+
+### Health check
+GET http://localhost:3000/api/v1/health
+
+### Root endpoint
+GET http://localhost:3000/

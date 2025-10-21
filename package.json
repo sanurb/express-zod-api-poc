@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "pnpm run \"/dev:/\"",
     "dev:tsc": "tsc --watch --preserveWatchOutput",
-    "dev:node": "node --enable-source-maps --watch dist/index.js",
+    "dev:node": "node --enable-source-maps --watch dist/src/index.js",
     "lint": "ultracite check",
-    "format": "ultracite fix"
+    "format": "ultracite fix",
+    "docs:generate": "tsx src/scripts/generate-docs.ts",
+    "docs:openapi": "tsx -e \"import('./src/scripts/generate-docs.ts').then(m => m.generateOpenAPI())\"",
+    "docs:client": "tsx -e \"import('./src/scripts/generate-docs.ts').then(m => m.generateClient())\""
   },
   "repository": {
     "type": "git",
@@ -23,20 +26,28 @@
   "homepage": "https://github.com/sanurb/typescript-node-esm-skeleton#readme",
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.3",
+    "@types/http-errors": "^2.0.5",
     "@types/node": "^24.5.2",
+    "@types/uuid": "^11.0.0",
     "lefthook": "^1.13.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "ultracite": "5.4.3"
   },
   "dependencies": {
     "@lensjs/express": "^1.4.0",
+    "@scalar/express-api-reference": "^0.8.22",
+    "compression": "^1.8.1",
     "consola": "^3.4.2",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-zod-api": "^25.5.3",
+    "http-errors": "^2.0.0",
     "std-env": "^3.9.0",
     "tstl": "^3.0.0",
-    "typia": "^9.7.2",
+    "uuid": "^13.0.0",
     "zod": "^4.1.12"
   }
 }

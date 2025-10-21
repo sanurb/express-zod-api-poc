@@ -1,0 +1,42 @@
+### Update a cat by ID (replace with actual UUID from POST response)
+PUT http://localhost:3000/api/v1/cats/{{$random.uuid}}
+Content-Type: application/json
+
+{
+  "name": "Whiskers Updated",
+  "age": 4,
+  "isAdopted": true
+}
+
+### Update only the name
+PUT http://localhost:3000/api/v1/cats/{{$random.uuid}}
+Content-Type: application/json
+
+{
+  "name": "Fluffy the Great"
+}
+
+### Update only the adoption status
+PUT http://localhost:3000/api/v1/cats/{{$random.uuid}}
+Content-Type: application/json
+
+{
+  "isAdopted": true
+}
+
+### Update breed and color
+PUT http://localhost:3000/api/v1/cats/{{$random.uuid}}
+Content-Type: application/json
+
+{
+  "breed": "Ragdoll",
+  "color": "Cream"
+}
+
+### Try to update a non-existent cat (should return 404)
+PUT http://localhost:3000/api/v1/cats/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "name": "Non-existent Cat"
+}

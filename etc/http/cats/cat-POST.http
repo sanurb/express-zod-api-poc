@@ -1,0 +1,34 @@
+### Create a new cat
+POST http://localhost:3000/api/v1/cats
+Content-Type: application/json
+
+{
+  "name": "Whiskers",
+  "age": 3,
+  "breed": "Persian",
+  "color": "White",
+  "isAdopted": false
+}
+
+### Create another cat
+POST http://localhost:3000/api/v1/cats
+Content-Type: application/json
+
+{
+  "name": "Fluffy",
+  "age": 5,
+  "breed": "Siamese",
+  "color": "Brown",
+  "isAdopted": true
+}
+
+### Create a cat with minimal data (isAdopted defaults to false)
+POST http://localhost:3000/api/v1/cats
+Content-Type: application/json
+
+{
+  "name": "Shadow",
+  "age": 2,
+  "breed": "Maine Coon",
+  "color": "Black"
+}
