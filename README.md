@@ -1,25 +1,27 @@
 <div align="center">
 
-# Express ESM Skeleton
+# Express Zod API POC
 
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-5.1.0-black.svg)](https://expressjs.com/)
+[![Express Zod API](https://img.shields.io/badge/Express%20Zod%20API-25.5.3-purple.svg)](https://github.com/RobinTail/express-zod-api)
+[![Zod](https://img.shields.io/badge/Zod-4.1.12-blue.svg)](https://zod.dev/)
 [![pnpm](https://img.shields.io/badge/pnpm-8+-orange.svg)](https://pnpm.io/)
 
-**A modern, type-safe Express.js skeleton with ESM support, environment validation, monitoring, and development tools.**
+**A comprehensive CRUD API for cat management built with Express Zod API, featuring type-safe validation, automatic documentation generation, and clean architecture.**
 
 </div>
 
 ## ✨ Features
 
-- 🚀 **Express.js 5.1.0** with TypeScript support
-- 📦 **ESM (ES Modules)** support out of the box
+- 🚀 **Express Zod API** with type-safe validation and automatic documentation
+- 🐱 **Cat Management CRUD API** with in-memory storage
+- 📚 **Auto-generated Documentation** (OpenAPI 3.1, TypeScript client, Schema docs)
 - 🔧 **Environment validation** with Zod and dotenv
-- 🏗️ **Singleton configuration** pattern with TSTL
-- 🎯 **Type-safe** configuration management
-- 📊 **Application monitoring** with Lens.js (development only)
+- 🏗️ **Clean Architecture** with vertical slicing and screaming architecture
+- 🎯 **Type-safe** end-to-end with Zod schemas
+- 📊 **Comprehensive logging** with Consola
 - 🛠️ **Development tools** with hot reload and linting
 - 🎨 **Clean code** with Biome formatter and linter
 - 🔒 **Git hooks** with Lefthook
@@ -30,17 +32,35 @@
 
 ```
 src/
-├── config/                 # Configuration management
-│   ├── index.ts           # Singleton configuration
-│   ├── env.schema.ts      # Environment validation schema
-│   └── types.ts          # TypeScript type definitions
-├── shared/                # Shared utilities
-│   └── core/
-│       └── constants/     # HTTP constants
-│           ├── http_status.ts
-│           ├── http_headers.ts
-│           └── mime_types.ts
-└── index.ts              # Application entry point
+├── cats/                   # Cat management feature (vertical slicing)
+│   ├── domain/            # Domain layer
+│   │   ├── cat.schema.ts  # Zod schemas and types
+│   │   ├── cat.types.ts   # TypeScript type definitions
+│   │   └── cat.constants.ts # Business constants
+│   ├── infrastructure/    # Infrastructure layer
+│   │   └── cat.repository.ts # In-memory repository
+│   ├── application/       # Application layer
+│   │   └── cat.service.ts # Business logic
+│   ├── controllers/       # Presentation layer
+│   │   ├── create_cat.controller.ts
+│   │   ├── get_cat.controller.ts
+│   │   ├── get_all_cats.controller.ts
+│   │   ├── update_cat.controller.ts
+│   │   └── delete_cat.controller.ts
+│   └── routes.ts          # Route configuration
+├── health/                # Health check feature
+│   ├── health.controller.ts
+│   └── routes.ts
+├── docs/                  # Documentation generation
+│   ├── generator.ts       # OpenAPI and client generators
+│   └── index.ts          # Documentation exports
+├── scripts/               # Utility scripts
+│   └── generate-docs.ts   # Documentation generation script
+├── config/                # Configuration management
+│   ├── index.ts          # Singleton configuration
+│   ├── env.schema.ts     # Environment validation schema
+│   └── types.ts         # TypeScript type definitions
+└── index.ts             # Application entry point
 ```
 
 ## ⚡ Quick Start
@@ -54,8 +74,8 @@ src/
 
 ```bash
 # Clone the repository
-git clone https://github.com/sanurb/express-esm-skeleton.git
-cd express-esm-skeleton
+git clone https://github.com/sanurb/express-zod-api-poc.git
+cd express-zod-api-poc
 
 # Install dependencies
 pnpm install
@@ -152,49 +172,86 @@ const fullConfig = GlobalConfig.config;
 
 ## 📊 API Endpoints
 
-| Method | Endpoint  | Description                       |
-| ------ | --------- | --------------------------------- |
-| `GET`  | `/`       | Basic API information             |
-| `GET`  | `/health` | Health check endpoint             |
-| `GET`  | `/lens`   | Application monitoring (dev only) |
+### System Endpoints
 
-### Example Responses
+| Method | Endpoint         | Description                   |
+| ------ | ---------------- | ----------------------------- |
+| `GET`  | `/`              | API information and endpoints |
+| `GET`  | `/api/v1/health` | Health check endpoint         |
+| `GET`  | `/docs`          | Scalar API documentation      |
 
-**GET /**
+### Cat Management Endpoints
 
-```json
-{
-  "message": "Express server is running!"
-}
+| Method   | Endpoint           | Description                   |
+| -------- | ------------------ | ----------------------------- |
+| `GET`    | `/api/v1/cats`     | List all cats with pagination |
+| `POST`   | `/api/v1/cats`     | Create a new cat              |
+| `GET`    | `/api/v1/cats/:id` | Get a specific cat by ID      |
+| `PUT`    | `/api/v1/cats/:id` | Update a specific cat         |
+| `DELETE` | `/api/v1/cats/:id` | Delete a specific cat         |
+
+### Example Requests
+
+**Create a Cat**
+
+```bash
+curl -X POST http://localhost:3000/api/v1/cats \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Whiskers",
+    "age": 3,
+    "breed": "Persian",
+    "color": "White",
+    "isAdopted": false
+  }'
 ```
 
-**GET /health**
+**Get All Cats**
 
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
+```bash
+curl http://localhost:3000/api/v1/cats?page=1&limit=10
 ```
 
-## 📊 Monitoring & Observability
+**Get Specific Cat**
 
-### Lens.js Integration
+```bash
+curl http://localhost:3000/api/v1/cats/123e4567-e89b-12d3-a456-426614174000
+```
 
-This project includes **Lens.js** for application monitoring and observability:
+## 📚 Documentation Generation
 
-- **Request & Response tracking** in development mode
-- **Performance monitoring** and metrics
-- **Error tracking** and debugging
-- **Real-time application insights**
+This project includes comprehensive documentation generation capabilities:
 
-Lens.js is automatically enabled in development mode and provides a monitoring dashboard at `/lens`.
+### Available Documentation
 
-### Production Considerations
+- **OpenAPI 3.1 Specification** - Complete API documentation
+- **TypeScript Client** - Type-safe client code generation
+- **Schema Documentation** - Markdown docs generated from Zod schemas
+- **Scalar Documentation** - Interactive API documentation at `/docs`
 
-- Lens.js is **automatically disabled** in production
-- Environment detection using `std-env`
-- Clean production logs without monitoring overhead
+### Generate Documentation
+
+```bash
+# Generate all documentation
+pnpm run docs:all
+
+# Generate only OpenAPI specification
+pnpm run docs:openapi
+
+# Generate only TypeScript client
+pnpm run docs:client
+
+# Generate only schema documentation
+pnpm run docs:schemas
+```
+
+### Documentation Features
+
+- **Type Safety**: Full TypeScript support with compile-time type checking
+- **Validation**: Automatic request/response validation using Zod schemas
+- **Examples**: Comprehensive examples and descriptions
+- **Tagging**: Proper endpoint categorization and organization
+- **Clean Architecture**: Documentation follows SOLID principles
 
 ## 🎯 Development Workflow
 
@@ -202,9 +259,11 @@ Lens.js is automatically enabled in development mode and provides a monitoring d
 2. **Install** dependencies with `pnpm install`
 3. **Configure** environment variables
 4. **Start** development with `pnpm run dev`
-5. **Monitor** your application with Lens.js at `/lens`
-6. **Code** with hot reload and type checking
-7. **Lint** and format with `pnpm run lint` and `pnpm run format`
+5. **Test** the API endpoints with the provided examples
+6. **Generate** documentation with `pnpm run docs:all`
+7. **View** interactive docs at `http://localhost:3000/docs`
+8. **Code** with hot reload and type checking
+9. **Lint** and format with `pnpm run lint` and `pnpm run format`
 
 ## 🔒 Code Quality
 
@@ -219,24 +278,31 @@ This project enforces strict code quality standards:
 
 ## 📝 Scripts
 
-| Script     | Description                                     |
-| ---------- | ----------------------------------------------- |
-| `dev`      | Start development server (TypeScript + Node.js) |
-| `dev:tsc`  | TypeScript compiler in watch mode               |
-| `dev:node` | Node.js with hot reload                         |
-| `lint`     | Lint code with Ultracite                        |
-| `format`   | Format code with Ultracite                      |
+| Script          | Description                                     |
+| --------------- | ----------------------------------------------- |
+| `dev`           | Start development server (TypeScript + Node.js) |
+| `dev:tsc`       | TypeScript compiler in watch mode               |
+| `dev:node`      | Node.js with hot reload                         |
+| `lint`          | Lint code with Ultracite                        |
+| `format`        | Format code with Ultracite                      |
+| `docs:generate` | Generate OpenAPI spec and TypeScript client     |
+| `docs:openapi`  | Generate only OpenAPI specification             |
+| `docs:client`   | Generate only TypeScript client                 |
+| `docs:schemas`  | Generate schema documentation with zod2md       |
+| `docs:all`      | Generate all documentation                      |
 
 ## 🌍 Environment Detection
 
 The application automatically detects the environment:
 
-- **Development**: Full monitoring with Lens.js
-- **Production**: Optimized performance without monitoring overhead
+- **Development**: Full logging with Consola and hot reload
+- **Production**: Optimized performance with minimal logging
 - **Environment variables**: Validated on startup with detailed error messages
 
 ## 🚀 Performance Features
 
+- **Express Zod API** with automatic validation and type safety
+- **In-memory storage** for fast CRUD operations
 - **Singleton pattern** for configuration (loaded once)
 - **Lazy loading** of environment variables
 - **Type-safe** configuration access
@@ -257,10 +323,12 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- [Express Zod API](https://github.com/RobinTail/express-zod-api) for the type-safe API framework
 - [Express.js](https://expressjs.com/) for the web framework
 - [TypeScript](https://www.typescriptlang.org/) for type safety
 - [Zod](https://zod.dev/) for schema validation
-- [Lens.js](https://github.com/lensjs/lens) for application monitoring
+- [zod2md](https://github.com/matejchalk/zod2md) for schema documentation generation
+- [Scalar](https://scalar.com/) for interactive API documentation
 - [Biome](https://biomejs.dev/) for code formatting and linting
 
 ---
@@ -269,6 +337,6 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 **⭐ Star this repository if you found it useful! ⭐**
 
-[Source](https://github.com/sanurb/express-esm-skeleton) • [Issues](https://github.com/sanurb/express-esm-skeleton/issues) • [License](LICENSE)
+[Source](https://github.com/sanurb/express-zod-api-poc) • [Issues](https://github.com/sanurb/express-zod-api-poc/issues) • [License](LICENSE)
 
 </div>

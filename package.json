@@ -1,5 +1,5 @@
 {
-  "name": "express-esm-skeleton",
+  "name": "express-zod-api-poc",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
