@@ -13,6 +13,10 @@ This directory contains the auto-generated documentation for the Cat Management 
 
 - **`api-client.ts`** - Type-safe TypeScript client for the API
 
+### Schema Documentation
+
+- **`schemas.md`** - Markdown documentation generated from Zod schemas using zod2md
+
 ## API Endpoints
 
 ### System Endpoints
@@ -80,6 +84,12 @@ pnpm run docs:openapi
 
 # Generate only TypeScript client
 pnpm run docs:client
+
+# Generate only schema documentation
+pnpm run docs:schemas
+
+# Generate all documentation (OpenAPI + TypeScript client + Schema docs)
+pnpm run docs:all
 ```
 
 ## Features
@@ -88,6 +98,7 @@ pnpm run docs:client
 - **Validation**: Automatic request/response validation using Zod schemas
 - **Documentation**: Auto-generated OpenAPI 3.1 specification
 - **Client Generation**: Type-safe client code generation
+- **Schema Documentation**: Markdown documentation generated from Zod schemas
 - **Examples**: Comprehensive examples and descriptions
 - **Tagging**: Proper endpoint categorization and organization
 

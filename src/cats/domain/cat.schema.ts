@@ -8,13 +8,6 @@ import { z } from "zod";
 import { CAT_CONSTANTS } from "./cat.constants.js";
 
 /**
- * Example values for schema documentation.
- */
-const EXAMPLE_VALUES = {
-  age: 3,
-} as const;
-
-/**
  * Base Cat schema with all required fields.
  * Uses strict validation for production-grade type safety.
  */
@@ -22,22 +15,19 @@ export const CatSchema = z.object({
   id: z
     .string()
     .uuid("Invalid cat ID format")
-    .example("123e4567-e89b-12d3-a456-426614174000")
-    .describe("Unique identifier for the cat"),
+    .describe("Unique identifier for the cat (UUID format)"),
   name: z
     .string()
     .min(CAT_CONSTANTS.name.minLength, "Cat name is required")
     .max(CAT_CONSTANTS.name.maxLength, "Cat name must be 50 characters or less")
     .trim()
-    .example("Whiskers")
-    .describe("The name of the cat"),
+    .describe("The name of the cat (1-50 characters)"),
   age: z
     .number()
     .int("Cat age must be an integer")
     .min(CAT_CONSTANTS.age.min, "Cat age cannot be negative")
     .max(CAT_CONSTANTS.age.max, "Cat age cannot exceed 30 years")
-    .example(EXAMPLE_VALUES.age)
-    .describe("The age of the cat in years"),
+    .describe("The age of the cat in years (0-30)"),
   breed: z
     .string()
     .min(CAT_CONSTANTS.breed.minLength, "Cat breed is required")
@@ -46,8 +36,7 @@ export const CatSchema = z.object({
       "Cat breed must be 30 characters or less"
     )
     .trim()
-    .example("Persian")
-    .describe("The breed of the cat"),
+    .describe("The breed of the cat (1-30 characters)"),
   color: z
     .string()
     .min(CAT_CONSTANTS.color.minLength, "Cat color is required")
@@ -56,23 +45,19 @@ export const CatSchema = z.object({
       "Cat color must be 20 characters or less"
     )
     .trim()
-    .example("White")
-    .describe("The color of the cat"),
+    .describe("The color of the cat (1-20 characters)"),
   isAdopted: z
     .boolean()
     .default(false)
-    .example(false)
-    .describe("Whether the cat has been adopted"),
+    .describe("Whether the cat has been adopted (defaults to false)"),
   createdAt: z
     .date()
     .default(() => new Date())
-    .example(new Date("2024-01-15T10:30:00Z"))
-    .describe("Timestamp when the cat was created"),
+    .describe("Timestamp when the cat was created (ISO 8601 format)"),
   updatedAt: z
     .date()
     .default(() => new Date())
-    .example(new Date("2024-01-15T10:30:00Z"))
-    .describe("Timestamp when the cat was last updated"),
+    .describe("Timestamp when the cat was last updated (ISO 8601 format)"),
 });
 
 /**
@@ -114,11 +99,7 @@ export const CatQuerySchema = z.object({
       "Limit must be between 1 and 100"
     )
     .describe("Number of items per page (max 100)"),
-  breed: z
-    .string()
-    .optional()
-    .example("Persian")
-    .describe("Filter cats by breed"),
+  breed: z.string().optional().describe("Filter cats by breed (optional)"),
   isAdopted: z
     .string()
     .optional()
@@ -134,8 +115,7 @@ export const CatParamsSchema = z.object({
   id: z
     .string()
     .uuid("Invalid cat ID format")
-    .example("123e4567-e89b-12d3-a456-426614174000")
-    .describe("Unique identifier of the cat"),
+    .describe("Unique identifier of the cat (UUID format)"),
 });
 
 /**

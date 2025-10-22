@@ -11,7 +11,9 @@
     "format": "ultracite fix",
     "docs:generate": "tsx src/scripts/generate-docs.ts",
     "docs:openapi": "tsx -e \"import('./src/scripts/generate-docs.ts').then(m => m.generateOpenAPI())\"",
-    "docs:client": "tsx -e \"import('./src/scripts/generate-docs.ts').then(m => m.generateClient())\""
+    "docs:client": "tsx -e \"import('./src/scripts/generate-docs.ts').then(m => m.generateClient())\"",
+    "docs:schemas": "pnpm dlx zod2md",
+    "docs:all": "pnpm run docs:generate && pnpm run docs:schemas"
   },
   "repository": {
     "type": "git",
@@ -30,11 +32,11 @@
     "@types/express": "^5.0.3",
     "@types/http-errors": "^2.0.5",
     "@types/node": "^24.5.2",
-    "@types/uuid": "^11.0.0",
     "lefthook": "^1.13.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
-    "ultracite": "5.4.3"
+    "ultracite": "5.4.3",
+    "zod2md": "^0.2.4"
   },
   "dependencies": {
     "@lensjs/express": "^1.4.0",
